@@ -1,0 +1,6 @@
+{
+  "kem": "Kyber768",
+  "dh": "X25519",
+  "symmetric": "AES-256-GCM",
+  "provider": "oqsprovider"
+}

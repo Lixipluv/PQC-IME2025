@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>PQC Hybrid Encryption Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+    }
+    textarea {
+      width: 100%;
+      max-width: 700px;
+      font-family: monospace;
+    }
+    select, button {
+      margin-top: 0.5rem;
+      padding: 0.4rem;
+    }
+    h1, h2 {
+      color: #2c3e50;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 1rem;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Simulação de Criptografia Híbrida Pós‑Quântica</h1>
+  <p>Este é um pequeno experimento que demonstra como combinar um mecanismo de encapsulamento de chave pós‑quântico (Kyber/ML‑KEM) com ECDH clássico e AES‑GCM.  Digite uma mensagem abaixo, escolha o algoritmo e clique em <em>Cifrar</em>.  Em seguida use o botão <em>Decifrar</em> para recuperar o texto original.</p>
+
+  <label for="plaintext"><strong>Mensagem:</strong></label><br>
+  <textarea id="plaintext" rows="5" placeholder="Digite sua mensagem aqui..."></textarea><br>
+
+  <label for="kem"><strong>Algoritmo KEM:</strong></label>
+  <select id="kem">
+    <option value="Kyber512">Kyber512</option>
+    <option value="Kyber768" selected>Kyber768</option>
+    <option value="Kyber1024">Kyber1024</option>
+  </select>
+
+  <button id="encryptBtn">Cifrar</button>
+
+  <h2>Pacote Cifrado</h2>
+  <textarea id="ciphertext" rows="10" readonly placeholder="O JSON com o resultado aparecerá aqui..."></textarea>
+
+  <button id="decryptBtn">Decifrar</button>
+
+  <h2>Mensagem Decifrada</h2>
+  <pre id="decrypted"></pre>
+
+  <script>
+    const encBtn = document.getElementById('encryptBtn');
+    const decBtn = document.getElementById('decryptBtn');
+
+    encBtn.onclick = async () => {
+      const data = document.getElementById('plaintext').value;
+      const kem = document.getElementById('kem').value;
+      if (!data) {
+        alert('Digite uma mensagem para cifrar.');
+        return;
+      }
+      try {
+        const res = await fetch('/encrypt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: data, kem: kem })
+        });
+        const json = await res.json();
+        document.getElementById('ciphertext').value = JSON.stringify(json, null, 2);
+      } catch (err) {
+        alert('Erro ao cifrar: ' + err);
+      }
+    };
+
+    decBtn.onclick = async () => {
+      const pkgTxt = document.getElementById('ciphertext').value;
+      if (!pkgTxt) {
+        alert('Não há pacote cifrado para decifrar.');
+        return;
+      }
+      let pkg;
+      try {
+        pkg = JSON.parse(pkgTxt);
+      } catch (err) {
+        alert('JSON inválido: ' + err);
+        return;
+      }
+      try {
+        const res = await fetch('/decrypt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ package: pkg })
+        });
+        const json = await res.json();
+        if (json.plaintext !== undefined) {
+          document.getElementById('decrypted').textContent = json.plaintext;
+        } else if (json.detail) {
+          document.getElementById('decrypted').textContent = 'Erro: ' + json.detail;
+        } else {
+          document.getElementById('decrypted').textContent = JSON.stringify(json);
+        }
+      } catch (err) {
+        alert('Erro ao decifrar: ' + err);
+      }
+    };
+  </script>
+</body>
+</html>

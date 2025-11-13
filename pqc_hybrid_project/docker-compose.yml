@@ -1,0 +1,22 @@
+services:
+  pqc-hybrid:
+    build: .
+    image: pqc-hybrid:latest
+    container_name: pqc-hybrid
+    ports:
+      - "3030:3030"
+    environment:
+      # Ensure OpenSSL can locate the OQS provider module
+      OPENSSL_MODULES: /usr/local/lib64/ossl-modules
+      OSSL_PROVIDER_PATH: /usr/local/lib64/ossl-modules
+      # Use our compiled OpenSSL libraries instead of system libraries
+      LD_LIBRARY_PATH: /usr/local/lib64:/usr/local/lib
+      # Ensure our OpenSSL binary is found first
+      PATH: /usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+    volumes:
+      # Persist server keys across container restarts by mapping the
+      # internal keys directory to a host directory.  Without this
+      # mapping the keys would be lost every time the container is
+      # rebuilt or restarted, preventing successful decryption.
+      - ./data/keys:/app/app/keys
+    restart: unless-stopped
